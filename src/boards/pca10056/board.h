@@ -58,7 +58,7 @@
 #define USB_DESC_UF2_PID       0x0029
 #define USB_DESC_CDC_ONLY_PID  0x0029
 
-#define UF2_VOLUME_LABEL  "GAMMA_DONGLE"
+#define UF2_VOLUME_LABEL  "GAMMADONGLE"
 #define UF2_PRODUCT_NAME    "Gamma Dongle"
 #define UF2_BOARD_ID        "nRF52840-pca10056-v1"
 #define UF2_INDEX_URL       "https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK"
