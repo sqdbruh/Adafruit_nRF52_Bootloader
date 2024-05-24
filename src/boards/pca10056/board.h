@@ -24,7 +24,7 @@
 
 #ifndef PCA10056_H
 #define PCA10056_H
-
+#define _PINNUM(port, pin)    ((port)*32 + (pin))
 /*------------------------------------------------------------------*/
 /* LED
  *------------------------------------------------------------------*/
@@ -36,8 +36,8 @@
 /* BUTTON
  *------------------------------------------------------------------*/
 #define BUTTONS_NUMBER      2
-#define BUTTON_1            11
-#define BUTTON_2            12
+#define BUTTON_1            _PINNUM(1,2)
+#define BUTTON_2            _PINNUM(0,12)
 #define BUTTON_PULL         NRF_GPIO_PIN_PULLUP
 
 //--------------------------------------------------------------------+
