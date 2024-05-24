@@ -24,6 +24,9 @@
 
 #ifndef PCA10056_H
 #define PCA10056_H
+// #define ENABLE_DCDC_0 0
+// #define ENABLE_DCDC_1 0
+#define UICR_REGOUT0_VALUE UICR_REGOUT0_VOUT_3V3
 #define _PINNUM(port, pin)    ((port)*32 + (pin))
 /*------------------------------------------------------------------*/
 /* LED
@@ -55,7 +58,7 @@
 #define USB_DESC_UF2_PID       0x0029
 #define USB_DESC_CDC_ONLY_PID  0x0029
 
-
+#define UF2_VOLUME_LABEL  "GAMMA_DONGLE"
 #define UF2_PRODUCT_NAME    "Gamma Dongle"
 #define UF2_BOARD_ID        "nRF52840-pca10056-v1"
 #define UF2_INDEX_URL       "https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK"
