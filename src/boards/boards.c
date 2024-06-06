@@ -80,9 +80,9 @@ void board_init(void) {
 
 #if LEDS_NUMBER > 0
   // use PMW0 for LED RED
-  led_pwm_init(LED_PRIMARY, LED_PRIMARY_PIN);
+  led_pwm_init(LED_PRIMARY, LED_PRIMARY_PIN, 1);
   #if LEDS_NUMBER > 1
-  led_pwm_init(LED_SECONDARY, LED_SECONDARY_PIN);
+  led_pwm_init(LED_SECONDARY, LED_SECONDARY_PIN, 0);
   #endif
 #endif
 
@@ -320,13 +320,13 @@ static uint16_t led_duty_cycles[PWM0_CH_NUM] = {0};
 #error "Only " PWM0_CH_NUM " concurrent status LEDs are supported."
 #endif
 
-void led_pwm_init(uint32_t led_index, uint32_t led_pin) {
+void led_pwm_init(uint32_t led_index, uint32_t led_pin, uint32_t stateOn) {
   NRF_PWM_Type* pwm = NRF_PWM0;
 
   pwm->ENABLE = 0;
 
   nrf_gpio_cfg_output(led_pin);
-  nrf_gpio_pin_write(led_pin, 1 - LED_STATE_ON);
+  nrf_gpio_pin_write(led_pin, stateOn);
 
   pwm->PSEL.OUT[led_index] = led_pin;
 
@@ -363,6 +363,7 @@ static uint32_t secondary_cycle_length;
 #endif
 
 void led_tick() {
+#if false
   uint32_t millis = _systick_count;
 
   uint32_t cycle = millis % primary_cycle_length;
@@ -388,6 +389,7 @@ void led_tick() {
   #endif
   led_pwm_duty_cycle(LED_SECONDARY, duty_cycle);
   #endif
+#endif
 }
 
 static uint32_t rgb_color;

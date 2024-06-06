@@ -84,6 +84,7 @@ import sys
 
 
 def main(args=None):
+    print("Running with Python version:", sys.version)
     import getopt
 
     output = None

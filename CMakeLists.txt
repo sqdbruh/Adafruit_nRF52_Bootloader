@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-find_package(Python COMPONENTS Interpreter)
+find_package(Python COMPONENTS Interpreter Development)
 
 if (NOT DEFINED BOARD)
   message(FATAL_ERROR "BOARD is not defined")
