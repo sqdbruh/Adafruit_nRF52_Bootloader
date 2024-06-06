@@ -94,7 +94,7 @@ enum {
   STATE_BLE_DISCONNECTED
 };
 
-void led_pwm_init(uint32_t led_index, uint32_t led_pin, uint32_t stateOn);
+void led_pwm_init(uint32_t led_index, uint32_t led_pin);
 void led_pwm_teardown(void);
 void led_pwm_disable(uint32_t led_index);
 void led_pwm_enable(uint32_t led_index);

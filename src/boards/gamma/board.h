@@ -21,13 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #ifndef PCA10056_H
 #define PCA10056_H
+#define _PINNUM(port, pin)    ((port)*32 + (pin))
+#define SEGMENT_DISPLAY
+#define SEGMENT_PIN_0 _PINNUM(0, 22)
+#define SEGMENT_PIN_1 _PINNUM(1, 0)
+#define SEGMENT_PIN_2 _PINNUM(1, 2)
+#define SEGMENT_PIN_3 _PINNUM(1, 4)
+#define SEGMENT_PIN_4 _PINNUM(1, 6)
 // #define ENABLE_DCDC_0 0
 // #define ENABLE_DCDC_1 0
 #define UICR_REGOUT0_VALUE UICR_REGOUT0_VOUT_3V3
-#define _PINNUM(port, pin)    ((port)*32 + (pin))
 /*------------------------------------------------------------------*/
 /* LED
  *------------------------------------------------------------------*/
@@ -59,8 +64,8 @@
 #define USB_DESC_UF2_PID       0x0029
 #define USB_DESC_CDC_ONLY_PID  0x0029
 
-#define UF2_VOLUME_LABEL  "GAMMADONGLE"
-#define UF2_PRODUCT_NAME    "Gamma Dongle"
+#define UF2_VOLUME_LABEL  "GAMMA"
+#define UF2_PRODUCT_NAME    "Gamma"
 #define UF2_BOARD_ID        "nRF52840-pca10056-v1"
 #define UF2_INDEX_URL       "https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK"
 

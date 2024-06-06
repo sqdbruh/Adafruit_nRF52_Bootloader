@@ -26,6 +26,7 @@
 #include "nrf_pwm.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
+#include "segmented_digits.h"
 
 #ifdef LED_APA102
 #include "nrf_spim.h"
@@ -39,6 +40,7 @@ void neopixel_init(void);
 void neopixel_write(uint8_t* pixels);
 void neopixel_teardown(void);
 #endif
+
 
 //--------------------------------------------------------------------+
 // IMPLEMENTATION
@@ -62,6 +64,86 @@ bool button_pressed(uint32_t pin) {
   uint32_t const active_state = (BUTTON_PULL == NRF_GPIO_PIN_PULLDOWN ? 1 : 0);
   return nrf_gpio_pin_read(pin) == active_state;
 }
+#define HIGH 1
+#define LOW 0
+static const uint32_t led188[] = {SEGMENT_PIN_0, SEGMENT_PIN_1, SEGMENT_PIN_2, SEGMENT_PIN_3, SEGMENT_PIN_4};
+static uint32_t currentState;
+
+static void disable_all_segments(){
+        for (uint32_t ledPinIndex = 0; ledPinIndex < sizeof(led188)/sizeof(led188[0]); ledPinIndex++) {
+            uint32_t pin_number = led188[ledPinIndex];
+            nrf_gpio_cfg_input(pin_number, NRF_GPIO_PIN_NOPULL);
+        }
+}
+
+static uint32_t currentSegment;
+static uint32_t segmentWait;
+static uint32_t segmentWaitMax;
+static struct segment_info loadingSegments[] = {f2, e2, d2, d3, c3, b3, a3, a2};
+
+static void segment_display_tick() 
+{
+    uint16_t digit;
+    struct segment_info seg = segments[0];
+    bool disableLeds = false;
+
+    if(segmentWait < segmentWaitMax){
+        segmentWait++;
+        if(segmentWait == segmentWaitMax){
+            segmentWait = 0;
+        }
+    }
+
+    if(segmentWait == 0)
+    {
+        if(currentState == STATE_USB_MOUNTED)
+        {
+            digit = letter_bootloader;
+            segmentWaitMax = 1;
+            disableLeds = false;
+
+            bool isSegmentSet = false;
+            do{
+                uint16_t mask = (1 << currentSegment);
+                isSegmentSet = (mask & digit) == mask;
+                seg = segments[currentSegment];
+                currentSegment++;
+                if(currentSegment == sizeof(segments)/sizeof(segments[0])){
+                    currentSegment = 0;
+                }
+            }
+            while(!isSegmentSet);
+        }
+        else
+        {
+            segmentWaitMax = 50;
+            seg = loadingSegments[currentSegment];
+            currentSegment++;
+            if(currentSegment == sizeof(loadingSegments)/sizeof(loadingSegments[0])){
+                currentSegment = 0;
+            }
+        }
+
+        for (uint32_t ledPinIndex = 0; ledPinIndex < sizeof(led188)/sizeof(led188[0]); ledPinIndex++) {
+            uint32_t pin_number = led188[ledPinIndex];
+            if (ledPinIndex == seg.high - 1) {
+                nrf_gpio_cfg_output(pin_number);
+                nrf_gpio_pin_write(pin_number, HIGH);
+            } else if (ledPinIndex == seg.low - 1) {
+                nrf_gpio_cfg_output(pin_number);
+                nrf_gpio_pin_write(pin_number, LOW);
+            } else {
+                nrf_gpio_cfg_input(pin_number, NRF_GPIO_PIN_NOPULL);
+            }
+        }
+    }
+    else{
+        if(disableLeds){
+            disable_all_segments();
+        }
+    }
+    // NRFX_DELAY_US(500);
+}
 
 // This is declared so that a board specific init can be called from here.
 void __attribute__((weak)) board_init2(void) {}
@@ -78,13 +160,13 @@ void board_init(void) {
   button_init(BUTTON_FRESET);
   NRFX_DELAY_US(100); // wait for the pin state is stable
 
-#if LEDS_NUMBER > 0
-  // use PMW0 for LED RED
-  led_pwm_init(LED_PRIMARY, LED_PRIMARY_PIN, 1);
-  #if LEDS_NUMBER > 1
-  led_pwm_init(LED_SECONDARY, LED_SECONDARY_PIN, 0);
-  #endif
-#endif
+// #if LEDS_NUMBER > 0
+//   // use PMW0 for LED RED
+//   led_pwm_init(LED_PRIMARY, LED_PRIMARY_PIN);
+//   #if LEDS_NUMBER > 1
+//   led_pwm_init(LED_SECONDARY, LED_SECONDARY_PIN);
+//   #endif
+// #endif
 
 #if defined(LED_NEOPIXEL) || defined(LED_RGB_RED_PIN) || defined(LED_APA102)
   // use neopixel for use enumeration
@@ -133,6 +215,15 @@ void board_init(void) {
   // Configure Systick for led blinky
   NVIC_SetPriority(SysTick_IRQn, 7);
   SysTick_Config(SystemCoreClock / 1000);
+
+
+  disable_all_segments();
+
+
+    // nrf_gpio_cfg_output(led188[0]);
+    // nrf_gpio_cfg_output(led188[1]);
+    // nrf_gpio_pin_write(led188[0], HIGH);
+    // nrf_gpio_pin_write(led188[1], LOW);
 }
 
 // Actions at the end of board_teardown.
@@ -320,13 +411,13 @@ static uint16_t led_duty_cycles[PWM0_CH_NUM] = {0};
 #error "Only " PWM0_CH_NUM " concurrent status LEDs are supported."
 #endif
 
-void led_pwm_init(uint32_t led_index, uint32_t led_pin, uint32_t stateOn) {
+void led_pwm_init(uint32_t led_index, uint32_t led_pin) {
   NRF_PWM_Type* pwm = NRF_PWM0;
 
   pwm->ENABLE = 0;
 
   nrf_gpio_cfg_output(led_pin);
-  nrf_gpio_pin_write(led_pin, stateOn);
+  nrf_gpio_pin_write(led_pin, 1 - LED_STATE_ON);
 
   pwm->PSEL.OUT[led_index] = led_pin;
 
@@ -363,39 +454,39 @@ static uint32_t secondary_cycle_length;
 #endif
 
 void led_tick() {
-#if false
-  uint32_t millis = _systick_count;
+    segment_display_tick();
+  // uint32_t millis = _systick_count;
 
-  uint32_t cycle = millis % primary_cycle_length;
-  uint32_t half_cycle = primary_cycle_length / 2;
-  if (cycle > half_cycle) {
-    cycle = primary_cycle_length - cycle;
-  }
-  uint16_t duty_cycle = 0x4f * cycle / half_cycle;
-  #if LED_STATE_ON == 1
-  duty_cycle = 0xff - duty_cycle;
-  #endif
-  led_pwm_duty_cycle(LED_PRIMARY, duty_cycle);
+  // uint32_t cycle = millis % primary_cycle_length;
+  // uint32_t half_cycle = primary_cycle_length / 2;
+  // if (cycle > half_cycle) {
+  //   cycle = primary_cycle_length - cycle;
+  // }
+  // uint16_t duty_cycle = 0x4f * cycle / half_cycle;
+  // #if LED_STATE_ON == 1
+  // duty_cycle = 0xff - duty_cycle;
+  // #endif
+  // led_pwm_duty_cycle(LED_PRIMARY, duty_cycle);
 
-  #ifdef LED_SECONDARY_PIN
-  cycle = millis % secondary_cycle_length;
-  half_cycle = secondary_cycle_length / 2;
-  if (cycle > half_cycle) {
-      cycle = secondary_cycle_length - cycle;
-  }
-  duty_cycle = 0x8f * cycle / half_cycle;
-  #if LED_STATE_ON == 1
-  duty_cycle = 0xff - duty_cycle;
-  #endif
-  led_pwm_duty_cycle(LED_SECONDARY, duty_cycle);
-  #endif
-#endif
+  // #ifdef LED_SECONDARY_PIN
+  // cycle = millis % secondary_cycle_length;
+  // half_cycle = secondary_cycle_length / 2;
+  // if (cycle > half_cycle) {
+  //     cycle = secondary_cycle_length - cycle;
+  // }
+  // duty_cycle = 0x8f * cycle / half_cycle;
+  // #if LED_STATE_ON == 1
+  // duty_cycle = 0xff - duty_cycle;
+  // #endif
+  // led_pwm_duty_cycle(LED_SECONDARY, duty_cycle);
+  // #endif
 }
 
 static uint32_t rgb_color;
 static bool temp_color_active = false;
 
 void led_state(uint32_t state) {
+    currentState = state;
   uint32_t new_rgb_color = rgb_color;
   uint32_t temp_color = 0;
   switch (state) {
