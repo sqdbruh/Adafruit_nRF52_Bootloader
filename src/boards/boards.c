@@ -85,7 +85,6 @@ static void segment_display_tick()
 {
     uint16_t digit;
     struct segment_info seg = segments[0];
-    bool disableLeds = false;
 
     if(segmentWait < segmentWaitMax){
         segmentWait++;
@@ -100,7 +99,6 @@ static void segment_display_tick()
         {
             digit = letter_bootloader;
             segmentWaitMax = 1;
-            disableLeds = false;
 
             bool isSegmentSet = false;
             do{
@@ -137,11 +135,6 @@ static void segment_display_tick()
             }
         }
     }
-    else{
-        if(disableLeds){
-            disable_all_segments();
-        }
-    }
     // NRFX_DELAY_US(500);
 }
 
@@ -155,6 +148,8 @@ void board_init(void) {
   // Use Internal OSC to compatible with all boards
   NRF_CLOCK->LFCLKSRC = CLOCK_LFCLKSRC_SRC_RC;
   NRF_CLOCK->TASKS_LFCLKSTART = 1UL;
+
+
 
   button_init(BUTTON_DFU);
   button_init(BUTTON_FRESET);
